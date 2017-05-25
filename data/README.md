@@ -1,14 +1,25 @@
-Housing Pipeline Dataset
-========================
+# Housing Pipeline Dataset
 
-This directory contains the housing pipeline dataset in CSV form.
+This directory contains the housing pipeline dataset downloaded from [The SF OpenData](https://data.sfgov.org/data?dept=Planning&type=datasets&search=pipeline)
+* [cleaned](cleaned) - canonical JSON housing data used for analysis
+* [raw](raw) - raw datasets in csv format
+* [raw/columnnames](raw) - transform file to map raw csv columns to a standard set
+* [cleaner.py](cleaner.py) - transform to clean the raw data
 
-Files are marked as belonging to a certain quarter, but that file can contain events from previous quarters. 
+Files are marked as belonging to a certain quarter, but that file can contain events from previous quarters.
 
-It is unclear what the relationship between the quarter of the file and date of the events it contains is. 
+It is unclear what the relationship between the quarter of the file and date of the events it contains is.
 
-Data Model
-----------
+## Where is the data?
+
+There are two files right now that are suitable for using for analysis:
+
+* `data/cleaned/all_quarters_merged.csv` - this file is created by the `data/cleaner.py` script. It includes all quarterly files concatenated, with column names and column values standardized.
+* `data/cleaned/all_quarters__one_record_per_project.csv` - this file is created by the `data/data_model.py` script. It is generated from the `all_quarters_merged.csv` file. It has been modified so that there is only one record per project (using apn+address as a unique project identifier). All attributes, such as number of units etc. are taken from the latest recrord received for that project. Other useful variables, such as the duration of a project, its first status, as well as the series of statuses it has gone through are added.
+
+If you find that the information you are interested in is messed up, please modify the scripts so that it is corrected. Avoid doing 1-off, non-reproducible analysis.
+
+## About the dataset
 
 Each row represents a _transition_ into another stage of the pipeline for a single project.
 
@@ -92,23 +103,23 @@ Glossary
 Other Notes
 -----------
 
-The Pipeline Report measures housing production in terms of housing units. Non-residential development, on the other hand, is measured in terms of building square footage. 
+The Pipeline Report measures housing production in terms of housing units. Non-residential development, on the other hand, is measured in terms of building square footage.
 
-Columns concerning number of units may be blank for non-residential development, and vice versa. 
+Columns concerning number of units may be blank for non-residential development, and vice versa.
 
 
 Data Issues
 -----------
 
-### Duplicate Records
+### Primary Keys
 
-There seem to be some duplicate records in the dataset, 
+There is not a strong concept of a primary key in the dataset. That is to say, a unique identifier for a project in the dataset.
 
-For example, these two records have the same `APN`, `BEST_STATE`, and `BEST_DATE`, however the address is slightly different. 
-
-
+APN, or parcel number, can often act a unique identified for a project, but sometimes multiple addresses and thus multiple projects, can correspond to the same APN, as in the example below:
 
 |     | NEIGHBORHOOD | APN         | Entitlement | BESTSTAT | BESTDATE   | NAMEADDR        | Alias | PLN_CASENO | BPAPPLNO       | BP_FORM | UNITS | UNITSNET | AFF | AFFNET | SECTION415 | SEC415_TENURE | SENIOR_HSG | STUDENT_HSG | ADDITIONS | NEWCONSTRUCTION | DEMOLITION | CHANGEOFUSE | COST       | BldgUse           | TOTAL_GSF | NET_GSF | CIE | CIENET | MED | MEDNET | MIPS | MIPSNET | PDR | PDRNET | RET | RETNET | VISIT | VISITNET | HOTELRM | HOTELRMNET | FirstFiled | MULTI | PLN_DESC                                                                                                                                                                                                         | DBI_DESC                                           | PLANNER  | EasternNbrhood | PLN_AREA              | PLN_DISTRICT   | HEIGHT | ZONING_SIM | ZONING_DISTRICT_NAME           | Supervisorial             | Location                           |
 |-----|--------------|-------------|-------------|----------|------------|-----------------|-------|------------|----------------|---------|-------|----------|-----|--------|------------|---------------|------------|-------------|-----------|-----------------|------------|-------------|------------|-------------------|-----------|---------|-----|--------|-----|--------|------|---------|-----|--------|-----|--------|-------|----------|---------|------------|------------|-------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------|----------|----------------|-----------------------|----------------|--------|------------|--------------------------------|---------------------------|------------------------------------|
 | 406 | Bayview      | APN 5336048 | 0           | PL FILED | 08/08/2013 | 1911 QUESADA AV |       | 2009       | 200701171881.0 | 2       | 1     | 1        | 0   | 0      |            |               | 0          | 0           | 0         | 0               | 0          | 0           | $350000.00 | 1 FAMILY DWELLING | 0         | 0       | 0   | 0      | 0   | 0      | 0    | 0       | 0   | 0      | 0   | 0      | 0     | 0        | 0       | 0          | 04/20/2009 | 1     | Construct two new three-story single-family homes on two vacant lots; 4,460 sf on Lot 48 and 6,020 sf on Lot 49, off-street parking for two vehicles (one on each lot); create access easement on City property. | TO ERECT 1 DWELLING UNIT WITH 3 STORY NEW BUILDING | EJARDINE | 0              | Bayview Hunters Point | South Bayshore | 40-X   | RH-1       | RESIDENTIAL- HOUSE, ONE FAMILY | SUPERVISORIAL DISTRICT 10 | (37.73539301820, -122.39559042300) |
 | 409 | Bayview      | APN 5336048 | 0           | PL FILED | 08/08/2013 | 1915 QUESADA AV |       | 2009       | 200701171858.0 | 2       | 1     | 1        | 0   | 0      |            |               | 0          | 0           | 0         | 0               | 0          | 0           | $400000.00 | 1 FAMILY DWELLING | 0         | 0       | 0   | 0      | 0   | 0      | 0    | 0       | 0   | 0      | 0   | 0      | 0     | 0        | 0       | 0          | 04/20/2009 | 1     | Construct two new three-story single-family homes on two vacant lots; 4,460 sf on Lot 48 and 6,020 sf on Lot 49, off-street parking for two vehicles (one on each lot); create access easement on City property. | TO ERECT 1 DWELLING UNIT 3 STORY NEW BUILDING      | EJARDINE | 0              | Bayview Hunters Point | South Bayshore | 40-X   | RH-1       | RESIDENTIAL- HOUSE, ONE FAMILY | SUPERVISORIAL DISTRICT 10 | (37.73539301820, -122.39559042300) |
+
+Thus the best primary key we can think of currently is the combination of (`APN`, `address`).
